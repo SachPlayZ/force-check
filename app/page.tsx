@@ -9,8 +9,6 @@ import {
   Trash2,
   RefreshCw,
   Search,
-  Filter,
-  MoreHorizontal,
   Calendar,
   TrendingUp,
   User,
