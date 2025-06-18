@@ -1,0 +1,121 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Student {
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String    @unique
+  phoneNumber           String?
+  codeforcesHandle      String    @unique
+  currentRating         Int       @default(0)
+  maxRating             Int       @default(0)
+  isActive              Boolean   @default(true)
+  emailRemindersEnabled Boolean   @default(true)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  lastDataSync          DateTime?
+
+  // Relations
+  contests    Contest[]
+  submissions Submission[]
+  reminders   Reminder[]
+
+  @@map("students")
+}
+
+model Contest {
+  id        String   @id @default(cuid())
+  contestId Int      @unique // Codeforces contest ID
+  name      String
+  startTime DateTime
+  duration  Int // in seconds
+  type      String // CF, ICPC, etc.
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
+  // Student's performance in this contest
+  rank              Int?
+  ratingChange      Int?
+  problemsSolved    Int  @default(0)
+  problemsAttempted Int  @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contests")
+}
+
+model Problem {
+  id        String @id @default(cuid())
+  problemId String @unique // Codeforces problem ID (e.g., "1234A")
+  name      String
+  rating    Int?
+  tags      String // JSON array of tags
+  contestId Int? // Contest this problem belongs to
+
+  // Relations
+  submissions Submission[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("problems")
+}
+
+model Submission {
+  id             String   @id @default(cuid())
+  submissionId   Int      @unique // Codeforces submission ID
+  problemId      String
+  verdict        String // OK, WRONG_ANSWER, etc.
+  language       String
+  submissionTime DateTime
+  executionTime  Int? // in milliseconds
+  memoryConsumed Int? // in KB
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+  problem   Problem @relation(fields: [problemId], references: [problemId])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("submissions")
+}
+
+model Reminder {
+  id           String   @id @default(cuid())
+  type         String // "inactivity", "weekly", etc.
+  sentAt       DateTime @default(now())
+  emailContent String
+
+  // Relations
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId String
+
+  @@map("reminders")
+}
+
+model SyncSettings {
+  id             String    @id @default(cuid())
+  cronExpression String    @default("0 2 * * *") // Default: 2 AM daily
+  isEnabled      Boolean   @default(true)
+  lastSync       DateTime?
+  nextSync       DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sync_settings")
+}
