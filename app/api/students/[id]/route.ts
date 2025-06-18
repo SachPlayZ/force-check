@@ -15,15 +15,13 @@ export async function GET(
       where: { id },
       include: {
         contests: {
-          orderBy: { startTime: 'desc' },
-          take: 10
+          orderBy: { startTime: 'desc' }
         },
         submissions: {
           include: {
             problem: true
           },
-          orderBy: { submissionTime: 'desc' },
-          take: 50
+          orderBy: { submissionTime: 'desc' }
         },
         reminders: {
           orderBy: { sentAt: 'desc' }

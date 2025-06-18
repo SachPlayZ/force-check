@@ -33,26 +33,22 @@ model Student {
 }
 
 model Contest {
-  id        String   @id @default(cuid())
-  contestId Int      @unique // Codeforces contest ID
-  name      String
-  startTime DateTime
-  duration  Int // in seconds
-  type      String // CF, ICPC, etc.
-
-  // Relations
-  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  studentId String
-
-  // Student's performance in this contest
+  id                String   @id @default(cuid())
+  contestId         Int // Codeforces contest ID (no longer unique)
+  name              String
+  startTime         DateTime
+  duration          Int // in seconds
+  type              String // CF, ICPC, etc.
+  student           Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  studentId         String
   rank              Int?
   ratingChange      Int?
-  problemsSolved    Int  @default(0)
-  problemsAttempted Int  @default(0)
+  problemsSolved    Int      @default(0)
+  problemsAttempted Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  @@unique([contestId, studentId])
   @@map("contests")
 }
 
