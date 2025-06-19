@@ -211,6 +211,9 @@ export default function SettingsPage() {
                     <option value="0 */4 * * *">Every 4 hours</option>
                     <option value="0 */2 * * *">Every 2 hours</option>
                     <option value="0 * * * *">Every hour</option>
+                    <option value="*/3 * * * *">
+                      Every 3 minutes (testing)
+                    </option>
                   </select>
                   <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                     Current schedule:{" "}

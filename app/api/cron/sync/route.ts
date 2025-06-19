@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/app/lib/prisma'
-import nodemailer from 'nodemailer'
 import { subDays } from 'date-fns'
+
+const RESEND_API_KEY = 're_6ggReWDb_8573Xd2UHtYXgRSQCQLEvh1V';
 
 /**
  * POST /api/cron/sync
@@ -125,8 +126,8 @@ export async function POST(request: NextRequest) {
 
           // Process rating history (contests)
           for (const contest of ratingHistory) {
-            const contestProblems = submissions.filter(
-              sub => sub.contestId === contest.contestId
+            const contestProblems = submissions.filter((sub: any) =>
+              sub.contestId === contest.contestId
             )
 
             for (const submission of contestProblems) {
@@ -155,7 +156,7 @@ export async function POST(request: NextRequest) {
                 studentId: student.id,
                 rank: contest.rank,
                 ratingChange: contest.newRating - contest.oldRating,
-                problemsSolved: contestProblems.filter(sub => sub.verdict === 'OK').length,
+                problemsSolved: contestProblems.filter((sub: any) => sub.verdict === 'OK').length,
                 problemsAttempted: contestProblems.length
               }
             })
@@ -177,8 +178,18 @@ export async function POST(request: NextRequest) {
               }
             })
 
-            await tx.submission.create({
-              data: {
+            await tx.submission.upsert({
+              where: { submissionId: submission.id },
+              update: {
+                verdict: submission.verdict,
+                language: submission.programmingLanguage,
+                submissionTime: new Date(submission.creationTimeSeconds * 1000),
+                executionTime: submission.timeConsumedMillis,
+                memoryConsumed: submission.memoryConsumedBytes / 1024,
+                problemId,
+                studentId: student.id
+              },
+              create: {
                 submissionId: submission.id,
                 problemId,
                 verdict: submission.verdict,
@@ -202,7 +213,7 @@ export async function POST(request: NextRequest) {
 
         // Check for inactivity (no submissions in last 7 days)
         const sevenDaysAgo = subDays(new Date(), 7)
-        const recentSubmissions = submissions.filter(sub => 
+        const recentSubmissions = submissions.filter((sub: any) => 
           new Date(sub.creationTimeSeconds * 1000) >= sevenDaysAgo
         )
 
@@ -290,19 +301,9 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * Send inactivity reminder email to student
+ * Send inactivity reminder email to student using Resend
  */
 async function sendInactivityEmail(student: any) {
-  const transporter = nodemailer.createTransporter({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false,
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS
-    }
-  })
-
   const emailContent = `
     Dear ${student.name},
 
@@ -316,13 +317,25 @@ async function sendInactivityEmail(student: any) {
 
     Best regards,
     Student Progress Management System
-  `
+  `;
 
-  await transporter.sendMail({
-    from: process.env.SMTP_FROM || 'noreply@example.com',
-    to: student.email,
-    subject: 'Reminder: Keep Practicing on Codeforces!',
-    text: emailContent,
-    html: emailContent.replace(/\n/g, '<br>')
-  })
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from: 'onboarding@resend.dev',
+      to: student.email,
+      subject: 'Reminder: Keep Practicing on Codeforces!',
+      text: emailContent,
+      html: emailContent.replace(/\n/g, '<br>')
+    })
+  });
+
+  if (!res.ok) {
+    const errorText = await res.text();
+    throw new Error(`Failed to send email via Resend: ${errorText}`);
+  }
 } 

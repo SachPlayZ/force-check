@@ -160,6 +160,23 @@ export default function StudentProfile() {
     }
   };
 
+  const handleSendTestMail = async () => {
+    if (!student) return;
+    try {
+      const response = await fetch(`/api/students/${student.id}/testmail`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      if (response.ok) {
+        alert("Test email sent successfully!");
+      } else {
+        alert(data.error || "Failed to send test email.");
+      }
+    } catch (error) {
+      alert("Failed to send test email.");
+    }
+  };
+
   const getRatingColor = (rating: number) => {
     if (rating >= 2400) return "text-red-600 dark:text-red-400";
     if (rating >= 2100) return "text-orange-600 dark:text-orange-400";
@@ -319,6 +336,14 @@ export default function StudentProfile() {
                     Reminders Off
                   </>
                 )}
+              </button>
+
+              <button
+                onClick={handleSendTestMail}
+                className="inline-flex items-center px-4 py-2 border border-blue-600 rounded-md shadow-sm text-sm font-medium text-blue-700 dark:text-blue-300 bg-white dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Send Test Mail
               </button>
 
               <button
