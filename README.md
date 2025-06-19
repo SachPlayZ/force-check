@@ -1,3 +1,5 @@
+Project Walkthrough : https://www.loom.com/share/0e280b104f0f4cef84d8508d8f37d3d0?sid=f9b50046-cb98-4b4b-9783-02af98927afc
+
 # Student Progress Management System
 
 A comprehensive web application for tracking and managing student progress on Codeforces with automated data synchronization, inactivity detection, and email reminders.
